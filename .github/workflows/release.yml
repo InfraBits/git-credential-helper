@@ -1,0 +1,79 @@
+name: Build
+on:
+  push:
+    tags: ['v*']
+concurrency:
+  group: release
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: x86_64-unknown-linux-musl
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cross,cargo-deb
+      - name: Build
+        run: cross build --release --target x86_64-unknown-linux-musl
+        env:
+          BUILD_VERSION: ${{ github.ref_name }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: git-credential-helper
+          path: target/x86_64-unknown-linux-musl/release/git-credential-helper
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Create GitHub release
+        uses: infrabits/ci-create-missing-release@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+          artifacts: git-credential-helper
+
+  ppa-upload:
+    runs-on: ubuntu-latest
+    needs: [build, create-release]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install packaging tools
+        run: sudo apt-get install -y --no-install-recommends devscripts debhelper libdistro-info-perl dput
+      - name: Import GPG key
+        run: gpg --batch --import <<< "$GPG_PRIVATE_KEY"
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      - name: Download binary
+        uses: actions/download-artifact@v4
+        with:
+          name: git-credential-helper
+      - name: Setup source structure
+        run: |
+          mkdir -p ${{ runner.temp }}/package/
+          cp -r debian ${{ runner.temp }}/package/
+          cp git-credential-helper ${{ runner.temp }}/package/
+      - name: Generate changelog
+        env:
+          DEBEMAIL: info@infrabits.nl
+          DEBFULLNAME: InfraBits
+        run: |
+          dch --create \
+            --package git-credential-helper \
+            --newversion $(sed -e 's/^v//' <<< "${{ github.ref_name }}~noble1") \
+            --distribution noble \
+            --urgency low \
+            "Release ${{ github.ref_name }}"
+        working-directory: ${{ runner.temp }}/package/
+      - name: Build source package
+        run: |
+          debuild -S -sa -d -k"${{ secrets.GPG_KEY_ID }}"
+        working-directory: ${{ runner.temp }}/package/
+      - name: Upload to PPA
+        run: dput ppa:damianzaremba/infrabits git-credential-helper_*_source.changes
+        working-directory: ${{ runner.temp }}

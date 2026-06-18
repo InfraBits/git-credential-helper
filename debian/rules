@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+export DH_VERBOSE = 1
+
+%:
+	dh $@
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -D -m 755 git-credential-helper \
+		$(CURDIR)/debian/git-credential-helper/usr/sbin/git-credential-helper
+
+override_dh_auto_clean:

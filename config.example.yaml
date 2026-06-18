@@ -1,0 +1,25 @@
+credentials:
+  github.com:
+    - 'org/repo':
+        provider: github-application
+        users:
+          - alice
+          - bob
+        provider-config:
+          application-id: 4567
+          key: /etc/git-credential-helper/keys/repo-specific-key.key
+
+    - '*':
+        provider: github-application
+        provider-config:
+          application-id: 1234
+          key: /etc/git-credential-helper/keys/github-fallback.key
+
+  lfs-shimmy.infrabits.nl:
+    - '*':
+        provider: static
+        users:
+          - alice
+        provider-config:
+          username: example
+          password: secret
