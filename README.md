@@ -58,11 +58,7 @@ credentials:
 
 If `users` is set on an entry, only listed users can retrieve those credentials — non-listed users get no credentials (same as a missing entry). `root` is always allowed regardless.
 
-The binary resolves the calling user from `SUDO_USER` (set by sudo) and falls back to the current process uid. Since the binary is typically invoked via `sudo`, configure sudoers accordingly:
-
-```
-%git-users ALL=(root) NOPASSWD: /usr/local/bin/git-credential-helper
-```
+The binary resolves the calling user from `SUDO_USER` (set by sudo) and falls back to the current process uid.
 
 ## Git configuration
 
@@ -75,14 +71,3 @@ Configure as a credential helper scoped to a specific host:
 [credential "https://lfs-shimmy.infrabits.nl"]
     helper = "!sudo /usr/local/bin/git-credential-helper"
 ```
-
-## Installation
-
-Download a pre-built binary from the [releases page](../../releases) (`x86_64` and `aarch64` musl builds are provided), or build from source:
-
-```sh
-cargo build --release
-install -m 755 target/release/git-credential-helper /usr/local/bin/
-```
-
-Place your config at `/etc/git-credential-helper/config.yaml` and your key files wherever the config references them (ensure they are readable only by root).
