@@ -41,6 +41,10 @@ jobs:
   ppa-upload:
     runs-on: ubuntu-latest
     needs: [build, create-release]
+    strategy:
+      fail-fast: false
+      matrix:
+        distribution: [noble, resolute]
     steps:
       - uses: actions/checkout@v7
       - name: Install packaging tools
@@ -65,8 +69,8 @@ jobs:
         run: |
           dch --create \
             --package git-credential-helper \
-            --newversion $(sed -e 's/^v//' <<< "${{ github.ref_name }}~noble1") \
-            --distribution noble \
+            --newversion $(sed -e 's/^v//' <<< "${{ github.ref_name }}~${{ matrix.distribution }}1") \
+            --distribution ${{ matrix.distribution }} \
             --urgency low \
             "Release ${{ github.ref_name }}"
         working-directory: ${{ runner.temp }}/package/
