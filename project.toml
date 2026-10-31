@@ -1,0 +1,5 @@
+[_]
+schema-version = "0.2"
+
+[[io.buildpacks.group]]
+uri = "docker://docker.io/paketocommunity/rust:0.92.1"

@@ -1,25 +1,15 @@
 name: CI
-on:
-  pull_request: {}
-concurrency:
-  group: ${{ github.head_ref || github.ref }}
-  cancel-in-progress: true
+on: { pull_request: { }, push: { } }
 jobs:
-  lint:
+  build-container:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo fmt --check
-      - run: cargo clippy -- -D warnings
+      - uses: actions/checkout@v6
 
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo test
+      - name: Build container
+        uses: infrabits/ci-pack@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          image: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          use_builder: toolforge-stable
+          detect_buildpacks: false
