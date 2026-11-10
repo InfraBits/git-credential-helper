@@ -17,5 +17,8 @@
       "matchManagers": ["cargo"],
       "groupName": "Rust dependencies"
     }
-  ]
+  ],
+  "lockFileMaintenance": {
+    "enabled": true
+  }
 }
