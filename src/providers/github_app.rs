@@ -161,6 +161,15 @@ pub async fn get_credential(
         return Ok(None);
     };
 
+    // Another repo in the same installation may already have a usable token
+    if let Some(token) = cache.get_for_installation(config.application_id, installation_id) {
+        let _ = cache.store(config.application_id, &normalized, installation_id, None);
+        return Ok(Some(Credential {
+            username: "oauth2".to_string(),
+            password: token,
+        }));
+    }
+
     let token_response = fetch_access_token(&client, &bearer_token, installation_id).await?;
     let expires_at = token_response
         .expires_at
@@ -171,8 +180,8 @@ pub async fn get_credential(
     let _ = cache.store(
         config.application_id,
         &normalized,
-        token_response.token.clone(),
-        expires_at,
+        installation_id,
+        Some((token_response.token.clone(), expires_at)),
     );
 
     Ok(Some(Credential {

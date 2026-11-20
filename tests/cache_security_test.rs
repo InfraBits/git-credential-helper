@@ -19,7 +19,7 @@ fn far_future() -> u64 {
 fn cache_file_has_mode_0600() {
     let (cache, _dir) = temp_cache();
     cache
-        .store(1234, "org/repo", "token".into(), far_future())
+        .store(1234, "org/repo", 1, Some(("token".into(), far_future())))
         .unwrap();
     let path = format!("{}/cache.json", _dir.path().to_str().unwrap());
     let mode = std::fs::metadata(path).unwrap().permissions().mode() & 0o777;
@@ -30,7 +30,7 @@ fn cache_file_has_mode_0600() {
 fn cache_dir_has_mode_0700() {
     let (cache, dir) = temp_cache();
     cache
-        .store(1234, "org/repo", "token".into(), far_future())
+        .store(1234, "org/repo", 1, Some(("token".into(), far_future())))
         .unwrap();
     let mode = std::fs::metadata(dir.path()).unwrap().permissions().mode() & 0o777;
     assert_eq!(mode, 0o700, "cache dir should be mode 0700, got {mode:o}");
