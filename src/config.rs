@@ -73,6 +73,10 @@ impl Config {
 }
 
 pub fn normalize_path(path: &str) -> String {
-    let stripped = path.split(".git").next().unwrap_or(path);
-    stripped.trim_matches('/').to_lowercase()
+    let trimmed = path.trim_matches('/');
+    let repo = match trimmed.find(".git/") {
+        Some(pos) => &trimmed[..pos],
+        None => trimmed.strip_suffix(".git").unwrap_or(trimmed),
+    };
+    repo.trim_matches('/').to_lowercase()
 }
