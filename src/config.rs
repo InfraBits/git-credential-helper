@@ -31,9 +31,16 @@ impl Config {
     pub fn load(path: &str) -> anyhow::Result<Self> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| anyhow::anyhow!("Failed to read config file '{}': {}", path, e))?;
-        let config: Config = serde_yaml::from_str(&content)
-            .map_err(|e| anyhow::anyhow!("Failed to parse config file '{}': {}", path, e))?;
-        Ok(config)
+        Self::parse(&content)
+            .map_err(|e| anyhow::anyhow!("Failed to parse config file '{}': {}", path, e))
+    }
+
+    /// Parse config from a YAML string, resolving `<<` merge keys.
+    pub fn parse(content: &str) -> Result<Self, serde_yaml::Error> {
+        // serde_yaml doesn't apply merge keys when deserialising directly
+        let mut value: serde_yaml::Value = serde_yaml::from_str(content)?;
+        value.apply_merge()?;
+        serde_yaml::from_value(value)
     }
 
     pub fn find_provider(
