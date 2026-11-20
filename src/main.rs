@@ -5,7 +5,7 @@ use std::os::unix::process::CommandExt;
 use anyhow::Context;
 use clap::Parser;
 use git_credential_helper::config::{Config, GithubAppConfig, StaticCredsConfig};
-use git_credential_helper::providers;
+use git_credential_helper::providers::{self, Credential};
 
 #[derive(Parser)]
 #[command(name = "git-credential-helper")]
@@ -13,6 +13,15 @@ struct Cli {
     #[arg(long, default_value = "/etc/git-credential-helper/config.yaml")]
     config: String,
 
+    /// Host to provide credentials for, instead of reading a git credential request from stdin
+    #[arg(long)]
+    host: Option<String>,
+
+    /// Repository path to provide credentials for (requires --host)
+    #[arg(long, requires = "host")]
+    path: Option<String>,
+
+    /// `get` (git credential protocol) or `token` (print only the password)
     operation: Option<String>,
 }
 
@@ -67,60 +76,81 @@ async fn main() {
     }
 }
 
-async fn run() -> anyhow::Result<()> {
-    let cli = Cli::parse();
-
-    match cli.operation.as_deref() {
-        Some("get") => {}
-        _ => return Ok(()),
-    }
-
-    let config = Config::load(&cli.config)?;
-    let username = resolve_username();
-
-    let payload = read_git_credential_input()?;
-
-    let host = match payload.get("host") {
-        Some(h) => h.as_str(),
-        None => {
-            anyhow::bail!("Missing host in payload: {:?}", payload);
-        }
-    };
-
-    let path = payload.get("path").map(|s| s.as_str());
-
-    let provider_entry = match config.find_provider(host, path, &username) {
+async fn get_credential(
+    config: &Config,
+    host: &str,
+    path: Option<&str>,
+    username: &str,
+) -> anyhow::Result<Option<Credential>> {
+    let provider_entry = match config.find_provider(host, path, username) {
         Some(entry) => entry.clone(),
-        None => return Ok(()),
+        None => return Ok(None),
     };
 
     match provider_entry.provider.as_str() {
         "github-application" => {
             let path = match path {
                 Some(p) => p,
-                None => anyhow::bail!("Missing path in payload for github-application provider"),
+                None => anyhow::bail!("Missing path for github-application provider"),
             };
 
             let gh_config: GithubAppConfig = serde_yaml::from_value(provider_entry.provider_config)
                 .context("Failed to parse github-application provider config")?;
 
-            if let Some(cred) = providers::github_app::get_credential(&gh_config, path).await? {
-                println!("username={}", cred.username);
-                println!("password={}", cred.password);
-            }
+            providers::github_app::get_credential(&gh_config, path).await
         }
         "static" => {
             let static_config: StaticCredsConfig =
                 serde_yaml::from_value(provider_entry.provider_config)
                     .context("Failed to parse static provider config")?;
 
-            let cred = providers::static_creds::get_credential(&static_config);
-            println!("username={}", cred.username);
-            println!("password={}", cred.password);
+            Ok(Some(providers::static_creds::get_credential(&static_config)))
         }
         unknown => {
             anyhow::bail!("Unknown provider: '{}'", unknown);
         }
+    }
+}
+
+async fn run() -> anyhow::Result<()> {
+    let cli = Cli::parse();
+
+    let token_only = match cli.operation.as_deref() {
+        Some("get") => false,
+        Some("token") => true,
+        _ => return Ok(()),
+    };
+
+    let config = Config::load(&cli.config)?;
+    let username = resolve_username();
+
+    let (host, path) = match cli.host {
+        Some(host) => (host, cli.path),
+        None => {
+            let mut payload = read_git_credential_input()?;
+            let host = match payload.remove("host") {
+                Some(h) => h,
+                None => anyhow::bail!("Missing host in payload: {:?}", payload),
+            };
+            (host, payload.remove("path"))
+        }
+    };
+
+    let cred = get_credential(&config, &host, path.as_deref(), &username).await?;
+
+    match cred {
+        Some(cred) if token_only => println!("{}", cred.password),
+        Some(cred) => {
+            println!("username={}", cred.username);
+            println!("password={}", cred.password);
+        }
+        None if token_only => anyhow::bail!(
+            "No credentials available for {}{} as {}",
+            host,
+            path.map(|p| format!("/{p}")).unwrap_or_default(),
+            username
+        ),
+        None => {}
     }
 
     Ok(())
