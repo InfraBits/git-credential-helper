@@ -48,7 +48,9 @@ credentials:
 #[test]
 fn listed_user_can_access_restricted_entry() {
     let cfg = parse(USERS_CONFIG);
-    let entry = cfg.find_provider("github.com", Some("org/restricted"), "alice").unwrap();
+    let entry = cfg
+        .find_provider("github.com", Some("org/restricted"), "alice")
+        .unwrap();
     let gc: serde_yaml::Value = entry.provider_config.clone();
     assert_eq!(gc["application-id"].as_u64().unwrap(), 111);
 }
@@ -56,7 +58,9 @@ fn listed_user_can_access_restricted_entry() {
 #[test]
 fn unlisted_user_skips_restricted_entry_falls_back_to_wildcard() {
     let cfg = parse(USERS_CONFIG);
-    let entry = cfg.find_provider("github.com", Some("org/restricted"), "charlie").unwrap();
+    let entry = cfg
+        .find_provider("github.com", Some("org/restricted"), "charlie")
+        .unwrap();
     let gc: serde_yaml::Value = entry.provider_config.clone();
     assert_eq!(gc["application-id"].as_u64().unwrap(), 222);
 }
@@ -64,7 +68,9 @@ fn unlisted_user_skips_restricted_entry_falls_back_to_wildcard() {
 #[test]
 fn root_bypasses_user_restriction() {
     let cfg = parse(USERS_CONFIG);
-    let entry = cfg.find_provider("github.com", Some("org/restricted"), "root").unwrap();
+    let entry = cfg
+        .find_provider("github.com", Some("org/restricted"), "root")
+        .unwrap();
     let gc: serde_yaml::Value = entry.provider_config.clone();
     assert_eq!(gc["application-id"].as_u64().unwrap(), 111);
 }
@@ -72,7 +78,9 @@ fn root_bypasses_user_restriction() {
 #[test]
 fn unlisted_user_gets_none_when_only_restricted_wildcard() {
     let cfg = parse(USERS_CONFIG);
-    assert!(cfg.find_provider("lfs.example.com", None, "charlie").is_none());
+    assert!(cfg
+        .find_provider("lfs.example.com", None, "charlie")
+        .is_none());
 }
 
 #[test]
@@ -85,7 +93,9 @@ fn listed_user_gets_static_wildcard() {
 #[test]
 fn no_users_field_allows_any_user() {
     let cfg = parse(BASIC_CONFIG);
-    let entry = cfg.find_provider("github.com", Some("other/repo"), "anyone").unwrap();
+    let entry = cfg
+        .find_provider("github.com", Some("other/repo"), "anyone")
+        .unwrap();
     let gc: serde_yaml::Value = entry.provider_config.clone();
     assert_eq!(gc["application-id"].as_u64().unwrap(), 1234);
 }

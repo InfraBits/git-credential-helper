@@ -1,5 +1,5 @@
-use crate::config::StaticCredsConfig;
 use super::Credential;
+use crate::config::StaticCredsConfig;
 
 pub fn get_credential(config: &StaticCredsConfig) -> Credential {
     Credential {

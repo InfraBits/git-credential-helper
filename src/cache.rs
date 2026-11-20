@@ -61,7 +61,13 @@ impl TokenCache {
         }
     }
 
-    pub fn store(&self, application_id: u64, repo: &str, token: String, expires_at: u64) -> Result<()> {
+    pub fn store(
+        &self,
+        application_id: u64,
+        repo: &str,
+        token: String,
+        expires_at: u64,
+    ) -> Result<()> {
         let mut file: CacheFile = fs::read_to_string(&self.path)
             .ok()
             .and_then(|s| serde_json::from_str(&s).ok())

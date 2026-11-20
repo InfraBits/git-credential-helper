@@ -3,9 +3,9 @@ use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use super::Credential;
 use crate::cache::TokenCache;
 use crate::config::{normalize_path, GithubAppConfig};
-use super::Credential;
 
 #[derive(Serialize)]
 struct JwtClaims {
@@ -83,7 +83,9 @@ async fn find_installation_id(
     repository: &str,
 ) -> anyhow::Result<Option<u64>> {
     let response = client
-        .get(format!("https://api.github.com/repos/{repository}/installation"))
+        .get(format!(
+            "https://api.github.com/repos/{repository}/installation"
+        ))
         .header("Authorization", format!("Bearer {bearer_token}"))
         .header("Accept", "application/vnd.github+json")
         .header("X-GitHub-Api-Version", "2022-11-28")
@@ -137,7 +139,10 @@ async fn fetch_access_token(
         .context("Failed to parse access token response")
 }
 
-pub async fn get_credential(config: &GithubAppConfig, path: &str) -> anyhow::Result<Option<Credential>> {
+pub async fn get_credential(
+    config: &GithubAppConfig,
+    path: &str,
+) -> anyhow::Result<Option<Credential>> {
     let normalized = normalize_path(path);
     let cache = TokenCache::default();
 
@@ -151,7 +156,8 @@ pub async fn get_credential(config: &GithubAppConfig, path: &str) -> anyhow::Res
     let bearer_token = generate_jwt(config.application_id, &config.key)?;
     let client = reqwest::Client::new();
 
-    let Some(installation_id) = find_installation_id(&client, &bearer_token, &normalized).await? else {
+    let Some(installation_id) = find_installation_id(&client, &bearer_token, &normalized).await?
+    else {
         return Ok(None);
     };
 

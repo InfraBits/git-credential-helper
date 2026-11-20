@@ -104,7 +104,9 @@ async fn get_credential(
                 serde_yaml::from_value(provider_entry.provider_config)
                     .context("Failed to parse static provider config")?;
 
-            Ok(Some(providers::static_creds::get_credential(&static_config)))
+            Ok(Some(providers::static_creds::get_credential(
+                &static_config,
+            )))
         }
         unknown => {
             anyhow::bail!("Unknown provider: '{}'", unknown);

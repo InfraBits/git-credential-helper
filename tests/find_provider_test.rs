@@ -42,7 +42,9 @@ fn wildcard_matches_when_no_path() {
 #[test]
 fn specific_pattern_takes_priority_over_wildcard() {
     let cfg = parse(BASIC_CONFIG);
-    let entry = cfg.find_provider("github.com", Some("org/repo"), "alice").unwrap();
+    let entry = cfg
+        .find_provider("github.com", Some("org/repo"), "alice")
+        .unwrap();
     let gc: serde_yaml::Value = entry.provider_config.clone();
     assert_eq!(gc["application-id"].as_u64().unwrap(), 4567);
 }
@@ -50,7 +52,9 @@ fn specific_pattern_takes_priority_over_wildcard() {
 #[test]
 fn unmatched_path_falls_back_to_wildcard() {
     let cfg = parse(BASIC_CONFIG);
-    let entry = cfg.find_provider("github.com", Some("other/repo"), "alice").unwrap();
+    let entry = cfg
+        .find_provider("github.com", Some("other/repo"), "alice")
+        .unwrap();
     let gc: serde_yaml::Value = entry.provider_config.clone();
     assert_eq!(gc["application-id"].as_u64().unwrap(), 1234);
 }
@@ -58,7 +62,9 @@ fn unmatched_path_falls_back_to_wildcard() {
 #[test]
 fn git_suffix_path_matches_specific_pattern() {
     let cfg = parse(BASIC_CONFIG);
-    let entry = cfg.find_provider("github.com", Some("org/repo.git"), "alice").unwrap();
+    let entry = cfg
+        .find_provider("github.com", Some("org/repo.git"), "alice")
+        .unwrap();
     let gc: serde_yaml::Value = entry.provider_config.clone();
     assert_eq!(gc["application-id"].as_u64().unwrap(), 4567);
 }

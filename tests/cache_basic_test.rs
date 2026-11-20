@@ -23,15 +23,21 @@ fn miss_on_empty_cache() {
 #[test]
 fn stores_and_retrieves_token() {
     let (cache, _dir) = temp_cache();
-    cache.store(1234, "org/repo", "ghs_token".into(), far_future()).unwrap();
+    cache
+        .store(1234, "org/repo", "ghs_token".into(), far_future())
+        .unwrap();
     assert_eq!(cache.get(1234, "org/repo").unwrap(), "ghs_token");
 }
 
 #[test]
 fn different_app_ids_are_independent() {
     let (cache, _dir) = temp_cache();
-    cache.store(1111, "org/repo", "token_a".into(), far_future()).unwrap();
-    cache.store(2222, "org/repo", "token_b".into(), far_future()).unwrap();
+    cache
+        .store(1111, "org/repo", "token_a".into(), far_future())
+        .unwrap();
+    cache
+        .store(2222, "org/repo", "token_b".into(), far_future())
+        .unwrap();
     assert_eq!(cache.get(1111, "org/repo").unwrap(), "token_a");
     assert_eq!(cache.get(2222, "org/repo").unwrap(), "token_b");
 }
@@ -39,8 +45,12 @@ fn different_app_ids_are_independent() {
 #[test]
 fn different_repos_are_independent() {
     let (cache, _dir) = temp_cache();
-    cache.store(1234, "org/repo-a", "token_a".into(), far_future()).unwrap();
-    cache.store(1234, "org/repo-b", "token_b".into(), far_future()).unwrap();
+    cache
+        .store(1234, "org/repo-a", "token_a".into(), far_future())
+        .unwrap();
+    cache
+        .store(1234, "org/repo-b", "token_b".into(), far_future())
+        .unwrap();
     assert_eq!(cache.get(1234, "org/repo-a").unwrap(), "token_a");
     assert_eq!(cache.get(1234, "org/repo-b").unwrap(), "token_b");
 }

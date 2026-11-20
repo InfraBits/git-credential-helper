@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::Deserialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -36,7 +36,12 @@ impl Config {
         Ok(config)
     }
 
-    pub fn find_provider(&self, host: &str, path: Option<&str>, username: &str) -> Option<&ProviderEntry> {
+    pub fn find_provider(
+        &self,
+        host: &str,
+        path: Option<&str>,
+        username: &str,
+    ) -> Option<&ProviderEntry> {
         let entries = self.credentials.get(host)?;
 
         let allowed = |entry: &ProviderEntry| -> bool {
